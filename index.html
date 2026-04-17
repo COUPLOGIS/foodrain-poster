@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>푸드레인 포스터 공동 제작 신청</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif; background: #fdf3f3; color: #222; }
+    .header { background: #c0392b; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
+    .header-logo { color: #fff; font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+    .header-sub { color: rgba(255,255,255,0.75); font-size: 12px; margin-top: 2px; }
+    .admin-toggle-wrap { display: flex; align-items: center; gap: 8px; }
+    .admin-label { color: rgba(255,255,255,0.85); font-size: 12px; }
+    .toggle { position: relative; width: 36px; height: 20px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; inset: 0; background: rgba(255,255,255,0.3); border-radius: 20px; cursor: pointer; transition: background 0.2s; }
+    .toggle input:checked + .toggle-slider { background: #fff; }
+    .toggle-slider:before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: #c0392b; border-radius: 50%; transition: transform 0.2s; }
+    .toggle input:checked + .toggle-slider:before { transform: translateX(16px); }
+    .hero { background: #fff5f5; border-bottom: 1px solid #f5c6c6; padding: 1.25rem 1.5rem; }
+    .hero h1 { font-size: 17px; font-weight: 600; color: #7b1a1a; margin-bottom: 4px; }
+    .hero p { font-size: 13px; color: #a83232; line-height: 1.6; }
+    .sort-bar { padding: 0.75rem 1.5rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0dede; background: #fff; }
+    .sort-bar span { font-size: 13px; color: #666; }
+    .sort-btn { font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 1px solid #c0392b; background: transparent; color: #c0392b; cursor: pointer; }
+    .sort-btn.active { background: #c0392b; color: #fff; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; padding: 1rem 1.5rem; }
+    .card { background: #fff; border: 1px solid #f0dede; border-radius: 12px; overflow: hidden; transition: border-color 0.15s; }
+    .card.in-progress { border-color: #f0a500; }
+    .card:not(.in-progress):hover { border-color: #c0392b; }
+    .card-img-placeholder { width: 100%; aspect-ratio: 3/4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; position: relative; }
+    .card-img-placeholder .img-label { font-size: 11px; color: #b07070; opacity: 0.7; }
+    .progress-banner { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(240,165,0,0.92); padding: 6px 8px; display: flex; align-items: center; gap: 5px; }
+    .progress-banner span { font-size: 10px; font-weight: 600; color: #412402; line-height: 1.3; }
+    .card-body { padding: 10px 10px 12px; }
+    .card-title { font-size: 13px; font-weight: 600; color: #222; margin-bottom: 4px; line-height: 1.4; }
+    .card-spec { font-size: 11px; color: #888; margin-bottom: 8px; }
+    .card-footer { display: flex; align-items: center; justify-content: space-between; }
+    .rec-count { font-size: 12px; color: #c0392b; font-weight: 600; }
+    .rec-btn { display: flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 20px; border: 1px solid #c0392b; background: transparent; color: #c0392b; font-size: 12px; cursor: pointer; transition: all 0.15s; }
+    .rec-btn:hover:not(:disabled) { background: #c0392b; color: #fff; }
+    .rec-btn.active { background: #c0392b; color: #fff; }
+    .rec-btn:disabled { opacity: 0.4; cursor: default; border-color: #aaa; color: #aaa; }
+    .badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 20px; margin-bottom: 5px; }
+    .badge-hot { background: #fff0f0; color: #791f1f; border: 1px solid #f09595; }
+    .badge-new { background: #fff5f5; color: #7b1a1a; border: 1px solid #f5c6c6; }
+    .badge-progress { background: #faeeda; color: #412402; border: 1px solid #fac775; }
+    .admin-panel { margin: 0.75rem 1.5rem 0; background: #fff8f8; border: 1px solid #f0dede; border-radius: 12px; padding: 1rem; display: none; }
+    .admin-panel.show { display: block; }
+    .admin-panel-title { font-size: 13px; font-weight: 600; color: #222; margin-bottom: 10px; }
+    .admin-list { display: flex; flex-direction: column; gap: 8px; }
+    .admin-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; background: #fff; border: 1px solid #f0dede; border-radius: 8px; }
+    .admin-item-name { font-size: 12px; color: #444; flex: 1; }
+    .admin-check { width: 15px; height: 15px; cursor: pointer; accent-color: #c0392b; }
+    .reset-btn { font-size: 11px; padding: 3px 8px; border-radius: 20px; border: 1px solid #ddd; background: transparent; color: #aaa; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+    .reset-btn:hover { border-color: #c0392b; color: #c0392b; background: #fff5f5; }
+    .admin-section-label { font-size: 11px; color: #999; padding: 6px 0 4px; font-weight: 500; border-top: 1px solid #f0dede; margin-top: 4px; }
+    .admin-section-label:first-child { border-top: none; margin-top: 0; }
+    .admin-item { background: #fff; border: 1px solid #f0dede; border-radius: 8px; overflow: hidden; }
+    .admin-item-header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; }
+    .admin-item-header:hover { background: #fff5f5; }
+    .admin-item-num { font-size: 11px; font-weight: 600; color: #c0392b; min-width: 18px; }
+    .admin-item-name { font-size: 12px; color: #444; flex: 1; }
+    .admin-item-actions { display: flex; align-items: center; gap: 6px; }
+    .admin-edit-panel { display: none; padding: 10px 12px; border-top: 1px solid #f0dede; background: #fdf8f8; }
+    .admin-edit-panel.open { display: block; }
+    .edit-row { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
+    .edit-label { font-size: 11px; color: #888; font-weight: 500; }
+    .edit-input { padding: 6px 8px; border: 1px solid #f0dede; border-radius: 6px; font-size: 12px; color: #222; background: #fff; outline: none; width: 100%; }
+    .edit-input:focus { border-color: #c0392b; }
+    .tag-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag-chip { display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; border: 1px solid #ddd; background: transparent; font-size: 11px; color: #888; cursor: pointer; transition: all 0.15s; }
+    .tag-chip.active-hot { background: #fff0f0; color: #791f1f; border-color: #f09595; }
+    .tag-chip.active-new { background: #fff5f5; color: #7b1a1a; border-color: #f5c6c6; }
+    .tag-chip.active-none { background: #f5f5f5; color: #555; border-color: #ccc; }
+    .edit-save-btn { width: 100%; padding: 7px; background: #c0392b; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 4px; }
+    .edit-save-btn:hover { background: #a93226; }
+    .chevron { font-size: 10px; color: #aaa; transition: transform 0.2s; }
+    .chevron.open { transform: rotate(180deg); }
+    .new-btn-wrap { padding: 0.75rem 1.5rem 0; }
+    .new-btn { width: 100%; padding: 14px; border-radius: 12px; border: 2px dashed #c0392b; background: #fff5f5; color: #c0392b; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.15s; }
+    .new-btn:hover { background: #ffe0e0; }
+    .toast-wrap { display: flex; justify-content: center; padding: 1rem 0 2rem; min-height: 48px; }
+    .toast { background: #c0392b; color: #fff; padding: 8px 18px; border-radius: 20px; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 14px; padding: 1.5rem; width: 100%; max-width: 320px; }
+    .modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+    .modal p { font-size: 13px; color: #555; line-height: 1.6; margin-bottom: 1.25rem; }
+    .modal-btns { display: flex; gap: 8px; }
+    .modal-btns button { flex: 1; padding: 11px; border-radius: 8px; font-size: 13px; cursor: pointer; font-weight: 500; }
+    .btn-cancel { border: 1px solid #ddd; background: transparent; color: #666; }
+    .btn-go { border: none; background: #c0392b; color: #fff; }
+    .pw-input-wrap { display: flex; gap: 8px; margin-bottom: 6px; }
+    .pw-input { flex: 1; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
+    .pw-input:focus { border-color: #c0392b; }
+    .pw-input.error { border-color: #e24b4a; }
+    .pw-error { font-size: 12px; color: #e24b4a; margin-top: 2px; min-height: 18px; }
+    .page-wrap { max-width: 720px; margin: 0 auto; background: #fdf3f3; min-height: 100vh; }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <div class="header">
+    <div>
+      <div class="header-logo">FOODRAIN</div>
+      <div class="header-sub">카페 포스터 공동 제작 신청</div>
+    </div>
+    <div class="admin-toggle-wrap">
+      <span class="admin-label" id="admin-label" style="display:none;">관리자 모드</span>
+      <label class="toggle" id="admin-toggle-label" style="display:none;">
+        <input type="checkbox" id="admin-toggle" onchange="toggleAdmin(this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+      <button onclick="openAdminAuth()" id="admin-btn" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);color:#fff;font-size:11px;padding:4px 10px;border-radius:20px;cursor:pointer;">관리자</button>
+    </div>
+  </div>
+
+  <div class="hero">
+    <h1>원하는 포스터를 추천해 주세요</h1>
+    <p>많이 추천받은 포스터를 대량 제작해 저렴하게 공급해 드립니다.<br>원하는 디자인이 없다면 직접 신청해 주세요!</p>
+  </div>
+
+  <div class="sort-bar">
+    <span id="total-count">전체 0개</span>
+    <div style="display:flex;gap:6px;">
+      <button class="sort-btn active" onclick="sortCards('rec')">추천순</button>
+      <button class="sort-btn" onclick="sortCards('new')">최신순</button>
+    </div>
+  </div>
+
+  <div class="admin-panel" id="admin-panel">
+    <div class="admin-panel-title">⚙️ 제작 진행중 상태 지정</div>
+    <div class="admin-list" id="admin-list"></div>
+  </div>
+
+  <div class="grid" id="card-grid"></div>
+
+  <div class="new-btn-wrap">
+    <button class="new-btn" onclick="openModal()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#c0392b" stroke-width="1.5"/><line x1="8" y1="4.5" x2="8" y2="11.5" stroke="#c0392b" stroke-width="1.5" stroke-linecap="round"/><line x1="4.5" y1="8" x2="11.5" y2="8" stroke="#c0392b" stroke-width="1.5" stroke-linecap="round"/></svg>
+      리스트에 없다면? 새로운 포스터 신청하기
+    </button>
+  </div>
+
+  <div class="toast-wrap"><div class="toast" id="toast"></div></div>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>새 포스터 신청</h2>
+    <p>원하는 포스터 내용, 이미지, 사이즈 등을 구글폼으로 제출해 주세요.<br>추천이 모이면 대량 제작해 드립니다!</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-go" onclick="goForm()">신청하러 가기</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="admin-auth-modal">
+  <div class="modal">
+    <h2>관리자 인증</h2>
+    <p>관리자 비밀번호를 입력해 주세요.</p>
+    <div class="pw-input-wrap">
+      <input type="password" id="pw-input" class="pw-input" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')checkAdminPw()">
+      <button class="btn-go" style="flex:0 0 auto;padding:10px 14px;" onclick="checkAdminPw()">확인</button>
+    </div>
+    <div class="pw-error" id="pw-error"></div>
+    <div class="modal-btns" style="margin-top:10px;">
+      <button class="btn-cancel" onclick="closeAdminAuth()">취소</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const GOOGLE_FORM_URL = 'https://forms.gle/Pw7xhkWKuncc1G5T8';
+  const API_URL = 'https://script.google.com/macros/s/AKfycbw_CsTM2WBwIRU5lR3NZa617_zBbUyKQMrWetkqxawO6gpuQeDQeq1W6mUl8y_johNGQg/exec';
+
+  const posters = [
+    { id:1, title:'수박주스 포스터',  spec:'A2·단면·스노우지150g', rec:0, hot:true,  isNew:false, date:'2025-03-10', color:'#b8d0f0', inProgress:true,  img:'https://couplogis.github.io/foodrain-poster/poster1.jpg' },
+    { id:2, title:'접수해주세요',     spec:'',                    rec:0, hot:false, isNew:false, date:'2025-03-15', color:'#f5c8d0', inProgress:false },
+    { id:3, title:'접수해주세요',     spec:'',                    rec:0, hot:false, isNew:false, date:'2025-03-20', color:'#d0ecd0', inProgress:false },
+    { id:4, title:'접수해주세요',     spec:'',                    rec:0, hot:false, isNew:false, date:'2025-04-01', color:'#ffe5b8', inProgress:false },
+    { id:5, title:'접수해주세요',     spec:'',                    rec:0, hot:false, isNew:false, date:'2025-04-05', color:'#e0d0f5', inProgress:false },
+    { id:6, title:'접수해주세요',     spec:'',                    rec:0, hot:false, isNew:false, date:'2025-04-10', color:'#c8e8f5', inProgress:false },
+  ];
+
+  let recCounts = {};
+  let voted = JSON.parse(localStorage.getItem('fr_voted') || '{}');
+  let sortMode = 'rec';
+  let isAdmin = false;
+  let isVoting = false;
+
+  function saveVoted() {
+    localStorage.setItem('fr_voted', JSON.stringify(voted));
+  }
+
+  async function callAPI(params) {
+    const url = API_URL + '?' + new URLSearchParams({...params, t: Date.now()}).toString();
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(url, { redirect: 'follow', signal: controller.signal });
+      clearTimeout(timer);
+      return await res.json();
+    } catch(e) {
+      return null;
+    }
+  }
+
+  async function loadRecCounts() {
+    posters.forEach(p => { recCounts[p.id] = p.rec; });
+    renderCards();
+    const data = await callAPI({});
+    if (data) { recCounts = data; renderCards(); }
+  }
+
+  async function toggleVote(id) {
+    if (isVoting) return;
+    isVoting = true;
+    const wasVoted = !!voted[id];
+    const action = wasVoted ? 'remove' : 'add';
+    voted[id] = !wasVoted;
+    saveVoted();
+    recCounts[id] = (Number(recCounts[id]) || 0) + (wasVoted ? -1 : 1);
+    renderCards();
+    showToast(wasVoted ? '추천을 취소했습니다' : '추천되었습니다!');
+    const data = await callAPI({ action: 'vote', poster_id: id, vote: action });
+    if (data && data.success) { recCounts[id] = data.rec_count; renderCards(); }
+    isVoting = false;
+  }
+
+  function getBadge(p) {
+    if (p.inProgress) return '<span class="badge badge-progress">제작 진행중</span>';
+    if (p.hot)        return '<span class="badge badge-hot">인기</span>';
+    if (p.isNew)      return '<span class="badge badge-new">NEW</span>';
+    return '';
+  }
+
+  function renderCards() {
+    let data = [...posters];
+    data.forEach(p => { p._rec = recCounts[p.id] !== undefined ? Number(recCounts[p.id]) : p.rec; });
+    if (sortMode === 'rec') data.sort((a,b) => b._rec - a._rec);
+    else data.sort((a,b) => new Date(b.date) - new Date(a.date));
+    document.getElementById('total-count').textContent = '전체 ' + data.length + '개';
+    document.getElementById('card-grid').innerHTML = data.map(p => {
+      const recNow = p._rec;
+      const isVoted = !!voted[p.id];
+      const imgHtml = p.img
+        ? `<img src="${p.img}" alt="${p.title}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none'">` 
+        : `<svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="4" y="4" width="24" height="24" rx="3" stroke="#c0392b" stroke-width="1.2"/><line x1="4" y1="22" x2="28" y2="22" stroke="#c0392b" stroke-width="1"/><circle cx="11" cy="13" r="3" stroke="#c0392b" stroke-width="1"/><path d="M18 17l3-4 4 5" stroke="#c0392b" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="img-label">포스터 이미지</span>`;
+      const progressHtml = p.inProgress
+        ? `<div class="progress-banner" style="position:absolute;bottom:0;left:0;right:0;"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="#412402" stroke-width="1.1"/><path d="M6 3.5V6l1.5 1.5" stroke="#412402" stroke-width="1.1" stroke-linecap="round"/></svg><span>제작이 진행중입니다</span></div>`
+        : '';
+      return `
+      <div class="card ${p.inProgress ? 'in-progress' : ''}">
+        <div class="card-img-placeholder" style="background:${p.color}55;">
+          ${imgHtml}${progressHtml}
+        </div>
+        <div class="card-body">
+          ${getBadge(p)}
+          <div class="card-title">${p.title}</div>
+          <div class="card-spec">${p.spec}</div>
+          <div class="card-footer">
+            <span class="rec-count" id="rec-${p.id}">추천 ${recNow}명</span>
+            <button class="rec-btn ${isVoted ? 'active' : ''}" ${p.inProgress ? 'disabled' : ''} onclick="toggleVote(${p.id})">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="${isVoted ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.2"><path d="M6.5 11S1 7.5 1 4.5C1 2.8 2.3 1.5 4 1.5c1 0 2 .6 2.5 1.5C7 2.1 8 1.5 9 1.5c1.7 0 3 1.3 3 3C12 7.5 6.5 11 6.5 11z"/></svg>
+              추천
+            </button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderAdminList() {
+    document.getElementById('admin-list').innerHTML = posters.map(p => `
+      <div class="admin-item" id="admin-item-${p.id}">
+        <div class="admin-item-header" onclick="toggleEditPanel(${p.id})">
+          <span class="admin-item-num">${p.id}</span>
+          <span class="admin-item-name" id="admin-name-${p.id}">${p.title}</span>
+          <div class="admin-item-actions">
+            <button class="reset-btn" onclick="event.stopPropagation();confirmReset(${p.id},'${p.title.replace(/'/g,"\\'")}')">초기화</button>
+            <input type="checkbox" class="admin-check" ${p.inProgress ? 'checked' : ''} onclick="event.stopPropagation()" onchange="setProgress(${p.id},this.checked)">
+            <span class="chevron" id="chevron-${p.id}">▼</span>
+          </div>
+        </div>
+        <div class="admin-edit-panel" id="edit-panel-${p.id}">
+          <div class="edit-row">
+            <div class="edit-label">포스터 제목</div>
+            <input class="edit-input" id="edit-title-${p.id}" value="${p.title}" placeholder="포스터 제목 입력">
+          </div>
+          <div class="edit-row">
+            <div class="edit-label">스펙 (사이즈, 재질 등)</div>
+            <input class="edit-input" id="edit-spec-${p.id}" value="${p.spec}" placeholder="예: A2 · 코팅">
+          </div>
+          <div class="edit-row">
+            <div class="edit-label">이미지 URL</div>
+            <input class="edit-input" id="edit-img-${p.id}" value="${p.img || ''}" placeholder="이미지 링크 붙여넣기">
+          </div>
+          <div class="edit-row">
+            <div class="edit-label">태그</div>
+            <div class="tag-row">
+              <button class="tag-chip ${!p.hot && !p.isNew ? 'active-none' : ''}" id="tag-none-${p.id}" onclick="setTag(${p.id},'none')">태그 없음</button>
+              <button class="tag-chip ${p.hot ? 'active-hot' : ''}" id="tag-hot-${p.id}" onclick="setTag(${p.id},'hot')">인기</button>
+              <button class="tag-chip ${p.isNew ? 'active-new' : ''}" id="tag-new-${p.id}" onclick="setTag(${p.id},'new')">NEW</button>
+            </div>
+          </div>
+          <button class="edit-save-btn" onclick="saveEdit(${p.id})">저장하기</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function toggleEditPanel(id) {
+    const panel = document.getElementById('edit-panel-' + id);
+    const chevron = document.getElementById('chevron-' + id);
+    const isOpen = panel.classList.contains('open');
+    document.querySelectorAll('.admin-edit-panel').forEach(el => el.classList.remove('open'));
+    document.querySelectorAll('.chevron').forEach(el => el.classList.remove('open'));
+    if (!isOpen) { panel.classList.add('open'); chevron.classList.add('open'); }
+  }
+
+  function setTag(id, tag) {
+    ['none','hot','new'].forEach(t => {
+      const btn = document.getElementById('tag-' + t + '-' + id);
+      btn.className = 'tag-chip';
+      if (t === tag) {
+        if (t === 'hot') btn.classList.add('active-hot');
+        else if (t === 'new') btn.classList.add('active-new');
+        else btn.classList.add('active-none');
+      }
+    });
+  }
+
+  function saveEdit(id) {
+    const p = posters.find(x => x.id === id);
+    if (!p) return;
+    p.title = document.getElementById('edit-title-' + id).value.trim() || p.title;
+    p.spec  = document.getElementById('edit-spec-' + id).value.trim();
+    p.img   = document.getElementById('edit-img-' + id).value.trim() || '';
+    p.hot   = document.getElementById('tag-hot-' + id).classList.contains('active-hot');
+    p.isNew = document.getElementById('tag-new-' + id).classList.contains('active-new');
+    document.getElementById('admin-name-' + id).textContent = p.title;
+    renderCards();
+    showToast(p.title + ' 정보를 저장했습니다');
+  }
+
+  function confirmReset(id, title) {
+    if (confirm('"' + title + '"\n의 추천수를 0으로 초기화할까요?\n\n이 작업은 되돌릴 수 없어요.')) {
+      resetVote(id);
+    }
+  }
+
+  async function resetVote(id) {
+    recCounts[id] = 0;
+    renderCards();
+    showToast('추천수를 초기화했습니다');
+    await callAPI({ action: 'vote', poster_id: id, vote: 'reset' });
+  }
+
+  function setProgress(id, val) {
+    const p = posters.find(x => x.id === id);
+    if (p) { p.inProgress = val; renderCards(); showToast(val ? '제작 진행중으로 설정했습니다' : '상태를 해제했습니다'); }
+  }
+
+  const ADMIN_PASSWORD = '1114';
+
+  function openAdminAuth() {
+    document.getElementById('admin-auth-modal').classList.add('open');
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-error').textContent = '';
+    document.getElementById('pw-input').classList.remove('error');
+    setTimeout(() => document.getElementById('pw-input').focus(), 100);
+  }
+
+  function closeAdminAuth() {
+    document.getElementById('admin-auth-modal').classList.remove('open');
+  }
+
+  function checkAdminPw() {
+    const val = document.getElementById('pw-input').value;
+    if (val === ADMIN_PASSWORD) {
+      closeAdminAuth();
+      document.getElementById('admin-toggle').checked = true;
+      document.getElementById('admin-toggle-label').style.display = 'block';
+      document.getElementById('admin-btn').style.display = 'none';
+      document.getElementById('admin-label').style.display = 'block';
+      toggleAdmin(true);
+    } else {
+      document.getElementById('pw-input').classList.add('error');
+      document.getElementById('pw-error').textContent = '비밀번호가 올바르지 않습니다.';
+    }
+  }
+
+  function toggleAdmin(on) {
+    isAdmin = on;
+    document.getElementById('admin-panel').classList.toggle('show', on);
+    if (on) renderAdminList();
+  }
+
+  function sortCards(mode) {
+    sortMode = mode;
+    document.querySelectorAll('.sort-btn').forEach((b,i) => {
+      b.classList.toggle('active', (mode==='rec'&&i===0)||(mode==='new'&&i===1));
+    });
+    renderCards();
+  }
+
+  function openModal()  { document.getElementById('modal').classList.add('open'); }
+  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+  function goForm()     { closeModal(); window.open(GOOGLE_FORM_URL, '_blank'); }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  loadRecCounts();
+</script>
+</body>
+</html>
